@@ -1,5 +1,5 @@
 FROM   centos:7
-LABEL   maintainer="Hector Oyarzo"
+LABEL   maintainer="#hectorgnux"
 LABEL   version="0.1-beta"
 WORKDIR /usr/src
 RUN   yum -y update
