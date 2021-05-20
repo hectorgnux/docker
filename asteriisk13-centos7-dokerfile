@@ -1,0 +1,31 @@
+FROM   centos:7
+LABEL   maintainer="Hector Oyarzo"
+LABEL   version="0.1-beta"
+WORKDIR /usr/src
+RUN   yum -y update
+RUN   yum -y install epel-release gcc-c++ ncurses-devel libxml2-devel wget make openssl-devel newt-devel svn
+RUN   yum -y install kernel-devel-`uname -r` sqlite-devel libuuid-devel gtk2-devel jansson-devel binutils-devel bzip2 patch libedit libedit-devel
+RUN curl -f -o asterisk.tar.gz -L http://downloads.asterisk.org/pub/telephony/asterisk/asterisk-13-current.tar.gz
+RUN mkdir asterisk \
+        && tar -xzf /usr/src/asterisk.tar.gz -C /usr/src/asterisk --strip-components=1 \
+        && rm asterisk.tar.gz
+
+WORKDIR /usr/src/asterisk
+RUN ./configure
+RUN contrib/scripts/get_mp3_source.sh
+RUN make menuselect.makeopts
+
+# RUN ./menuselect/menuselect --list-options
+RUN ./menuselect/menuselect --enable=chan_sip --enable=format_mp3 --disable=BUILD_NATIVE
+RUN     cat menuselect.makeopts
+RUN make
+RUN make install \
+        && make config
+
+RUN rm -r /usr/src/asterisk
+
+#VOLUME  /etc/asterisk
+#EXPOSE  5060/udp
+#EXPOSE  10000-10100/udp
+#WORKDIR /etc/asterisk
+ENTRYPOINT  ["/usr/sbin/asterisk", "-vvvvvvv"]
