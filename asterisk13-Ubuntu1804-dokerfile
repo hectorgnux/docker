@@ -1,0 +1,25 @@
+FROM   ubuntu:bionic
+LABEL   maintainer="#hectorgnux"
+LABEL   version="0.1-beta"
+WORKDIR /usr/src
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ="America/Santiago"
+RUN apt-get update -y
+RUN apt-get install -y curl wget build-essential git autoconf subversion pkg-config libtool libncurses5-dev libncursesw5-dev uuid-dev libjansson-dev libxml2 libxml2-dev sqlite3 libsqlite3-dev openssh-server sudo
+RUN curl -f -o asterisk.tar.gz -L http://downloads.asterisk.org/pub/telephony/asterisk/asterisk-13-current.tar.gz
+RUN mkdir asterisk \
+        && tar -xzf /usr/src/asterisk.tar.gz -C /usr/src/asterisk --strip-components=1 \
+        && rm asterisk.tar.gz
+WORKDIR /usr/src/asterisk
+RUN contrib/scripts/get_mp3_source.sh
+RUN contrib/scripts/install_prereq install
+RUN ./configure --with-pjproject-bundled
+RUN make menuselect.makeopts
+RUN ./menuselect/menuselect --enable chan_sip --enable format_mp3
+RUN make menuselect
+RUN make -j4
+RUN make install
+RUN make basic-pbx
+RUN make config
+RUN ldconfig
+ENTRYPOINT  ["/usr/sbin/asterisk", "-vvvvvvv"]
